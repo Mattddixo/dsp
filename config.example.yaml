@@ -1,0 +1,23 @@
+# DSP Configuration File
+# This is an example configuration file. Copy it to config.yaml and modify as needed.
+
+# Directory where DSP stores its metadata
+data_dir: .dsp
+
+# Hash algorithm to use for file hashing (blake3, sha256, or sha512)
+hash_algorithm: blake3
+
+# Compression level for bundles (1-9, where 1 is fastest and 9 is best compression)
+compression_level: 6
+
+# Whether to enable encryption of bundles
+encryption_enabled: false
+
+# Whether to enable signing of bundles
+signing_enabled: false
+
+# Path to the signing key (only needed if signing_enabled is true)
+# signing_key_path: path/to/signing.key
+
+# Path to the encryption key (only needed if encryption_enabled is true)
+# encryption_key_path: path/to/encryption.key 

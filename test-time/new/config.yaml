@@ -1,0 +1,6 @@
+dsp_dir: new
+data_dir: ../testthis
+hash_algorithm: blake3
+compression_level: 3
+encryption_enabled: false
+signing_enabled: false

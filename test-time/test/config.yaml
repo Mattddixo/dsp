@@ -1,0 +1,10 @@
+dsp_dir: test
+data_dir: test/data
+hash_algorithm: blake3
+compression_level: 3
+encryption:
+    enabled: true
+    method: age-pass
+    global_dir: ~/.dsp-global
+    default_recipient: ""
+    encrypt_metadata: false
