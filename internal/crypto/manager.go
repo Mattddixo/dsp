@@ -74,8 +74,8 @@ func NewKeyManager() (*KeyManager, error) {
 // InitializeKeys generates new age keys and a local certificate
 func (m *KeyManager) InitializeKeys() error {
 	// Generate age keys
-	if err := m.generateAgeKeys(); err != nil {
-		return fmt.Errorf("failed to generate age keys: %w", err)
+	if err := m.GenerateKeyPair(); err != nil {
+		return fmt.Errorf("failed to generate key pair: %w", err)
 	}
 
 	// Generate local certificate if it doesn't exist
@@ -88,7 +88,8 @@ func (m *KeyManager) InitializeKeys() error {
 	return nil
 }
 
-// generateAgeKeys generates new age keys for encryption
+// generateAgeKeys is deprecated - use GenerateKeyPair instead
+// Keeping this for backward compatibility but it should not be used
 func (m *KeyManager) generateAgeKeys() error {
 	// Create keys directory if it doesn't exist
 	keysDir := filepath.Join(m.keyDir, "keys", "private")
