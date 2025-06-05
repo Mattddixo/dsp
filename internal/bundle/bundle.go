@@ -381,11 +381,13 @@ func (b *Bundle) Verify() error {
 	if b.CreatedBy == "" {
 		return fmt.Errorf("bundle has no creator")
 	}
-	if b.SourceSnapshot == "" {
-		return fmt.Errorf("bundle has no source snapshot")
-	}
 	if b.TargetSnapshot == "" {
 		return fmt.Errorf("bundle has no target snapshot")
+	}
+
+	// Source snapshot is only required for non-initial bundles
+	if !b.IsInitial && b.SourceSnapshot == "" {
+		return fmt.Errorf("bundle has no source snapshot")
 	}
 
 	// Check repository information

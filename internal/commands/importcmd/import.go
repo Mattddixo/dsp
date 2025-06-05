@@ -657,23 +657,11 @@ func applyTrackedPaths(dspDir string, b *bundle.Bundle, newRepoRoot string) erro
 		return fmt.Errorf("failed to load tracking config: %w", err)
 	}
 
-	// Get source repository root from bundle
-	sourceRepoRoot := filepath.Dir(filepath.Dir(b.SourceSnapshot))
-
-	// Convert and add each tracked path
+	// Add each tracked path directly from the bundle's tracking config
 	for _, path := range b.Repository.TrackingConfig.Paths {
-		// Get relative path from source repo
-		relPath, err := filepath.Rel(sourceRepoRoot, path.Path)
-		if err != nil {
-			return fmt.Errorf("failed to get relative path: %w", err)
-		}
-
-		// Create new absolute path
-		newPath := filepath.Join(newRepoRoot, relPath)
-
 		// Create tracked path
 		trackedPath := snapshot.TrackedPath{
-			Path:     newPath,
+			Path:     path.Path,
 			IsDir:    path.IsDir,
 			Excludes: path.Excludes,
 		}
