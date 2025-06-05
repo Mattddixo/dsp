@@ -35,6 +35,12 @@ A secure protocol for synchronizing data across disconnected or intermittently c
 
 ### Installation
 
+#### Automatic Install (Recommended)
+```bash
+# Download and run the installer script
+curl -sSL https://raw.githubusercontent.com/Mattddixo/dsp/main/install.sh | bash
+```
+
 #### Quick Install
 ```bash
 # Install the latest version
