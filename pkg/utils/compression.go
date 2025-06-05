@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/klauspost/compress/zstd"
 )
@@ -76,6 +77,10 @@ func CreateZipArchive(zipPath string, files map[string]string) error {
 
 		// Add directory
 		if path[len(path)-1] == '/' {
+			// Ensure directory name ends with slash
+			if !strings.HasSuffix(name, "/") {
+				name = name + "/"
+			}
 			// Create directory entry
 			if _, err := zipWriter.Create(name); err != nil {
 				return fmt.Errorf("failed to create directory entry: %w", err)
@@ -92,7 +97,11 @@ func CreateZipArchive(zipPath string, files map[string]string) error {
 
 		// Create parent directories in zip if needed
 		if dir := filepath.Dir(name); dir != "." {
-			if _, err := zipWriter.Create(dir + "/"); err != nil {
+			// Ensure directory name ends with slash
+			if !strings.HasSuffix(dir, "/") {
+				dir = dir + "/"
+			}
+			if _, err := zipWriter.Create(dir); err != nil {
 				return fmt.Errorf("failed to create directory entry: %w", err)
 			}
 		}
