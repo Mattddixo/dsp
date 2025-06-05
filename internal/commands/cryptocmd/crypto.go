@@ -61,8 +61,8 @@ The generated keys will be used for encrypting bundles when encryption is enable
 						return fmt.Errorf("failed to create key manager: %w", err)
 					}
 
-					if err := manager.GenerateKeyPair(); err != nil {
-						return fmt.Errorf("failed to generate key pair: %w", err)
+					if err := manager.InitializeKeys(); err != nil {
+						return fmt.Errorf("failed to initialize crypto system: %w", err)
 					}
 
 					publicKey, err := manager.GetPublicKey()
