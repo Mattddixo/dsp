@@ -3,7 +3,7 @@ package cryptocmd
 import (
 	"fmt"
 
-	"github.com/T-I-M/dsp/internal/crypto"
+	"github.com/Mattddixo/dsp/internal/crypto"
 	"github.com/urfave/cli/v2"
 )
 

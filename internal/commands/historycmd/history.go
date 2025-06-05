@@ -3,8 +3,8 @@ package historycmd
 import (
 	"fmt"
 
-	"github.com/T-I-M/dsp/internal/commands/common"
-	"github.com/T-I-M/dsp/internal/commands/flags"
+	"github.com/Mattddixo/dsp/internal/commands/common"
+	"github.com/Mattddixo/dsp/internal/commands/flags"
 	"github.com/urfave/cli/v2"
 )
 

@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/T-I-M/dsp/config"
-	"github.com/T-I-M/dsp/internal/commands"
-	"github.com/T-I-M/dsp/internal/commands/cryptocmd"
-	"github.com/T-I-M/dsp/internal/commands/exportcmd"
-	"github.com/T-I-M/dsp/internal/commands/help"
-	"github.com/T-I-M/dsp/internal/commands/hostcmd"
-	"github.com/T-I-M/dsp/internal/commands/usecmd"
+	"github.com/Mattddixo/dsp/config"
+	"github.com/Mattddixo/dsp/internal/commands"
+	"github.com/Mattddixo/dsp/internal/commands/cryptocmd"
+	"github.com/Mattddixo/dsp/internal/commands/exportcmd"
+	"github.com/Mattddixo/dsp/internal/commands/help"
+	"github.com/Mattddixo/dsp/internal/commands/hostcmd"
+	"github.com/Mattddixo/dsp/internal/commands/usecmd"
 	"github.com/urfave/cli/v2"
 )
 

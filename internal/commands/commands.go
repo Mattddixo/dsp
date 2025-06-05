@@ -1,17 +1,17 @@
 package commands
 
 import (
-	"github.com/T-I-M/dsp/config"
-	"github.com/T-I-M/dsp/internal/commands/applycmd"
-	"github.com/T-I-M/dsp/internal/commands/bundlecmd"
-	"github.com/T-I-M/dsp/internal/commands/diffcmd"
-	"github.com/T-I-M/dsp/internal/commands/historycmd"
-	"github.com/T-I-M/dsp/internal/commands/initcmd"
-	"github.com/T-I-M/dsp/internal/commands/repocmd"
-	"github.com/T-I-M/dsp/internal/commands/snapshotcmd"
-	"github.com/T-I-M/dsp/internal/commands/statuscmd"
-	"github.com/T-I-M/dsp/internal/commands/trackcmd"
-	"github.com/T-I-M/dsp/internal/commands/untrackcmd"
+	"github.com/Mattddixo/dsp/config"
+	"github.com/Mattddixo/dsp/internal/commands/applycmd"
+	"github.com/Mattddixo/dsp/internal/commands/bundlecmd"
+	"github.com/Mattddixo/dsp/internal/commands/diffcmd"
+	"github.com/Mattddixo/dsp/internal/commands/historycmd"
+	"github.com/Mattddixo/dsp/internal/commands/initcmd"
+	"github.com/Mattddixo/dsp/internal/commands/repocmd"
+	"github.com/Mattddixo/dsp/internal/commands/snapshotcmd"
+	"github.com/Mattddixo/dsp/internal/commands/statuscmd"
+	"github.com/Mattddixo/dsp/internal/commands/trackcmd"
+	"github.com/Mattddixo/dsp/internal/commands/untrackcmd"
 	"github.com/urfave/cli/v2"
 )
 

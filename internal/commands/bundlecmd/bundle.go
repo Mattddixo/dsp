@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/T-I-M/dsp/internal/bundle"
-	"github.com/T-I-M/dsp/internal/repo"
+	"github.com/Mattddixo/dsp/internal/bundle"
+	"github.com/Mattddixo/dsp/internal/repo"
 	"github.com/urfave/cli/v2"
 )
 

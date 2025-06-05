@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/T-I-M/dsp/config"
+	"github.com/Mattddixo/dsp/config"
 	"github.com/urfave/cli/v2"
 )
 

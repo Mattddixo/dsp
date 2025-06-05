@@ -1,4 +1,4 @@
-module github.com/T-I-M/dsp
+module github.com/Mattddixo/dsp
 
 go 1.21
 

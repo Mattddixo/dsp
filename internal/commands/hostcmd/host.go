@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/T-I-M/dsp/internal/commands/flags"
-	"github.com/T-I-M/dsp/internal/host"
+	"github.com/Mattddixo/dsp/internal/commands/flags"
+	"github.com/Mattddixo/dsp/internal/host"
 	"github.com/urfave/cli/v2"
 )
 

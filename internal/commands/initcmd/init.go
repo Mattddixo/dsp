@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/T-I-M/dsp/config"
-	"github.com/T-I-M/dsp/internal/repo"
+	"github.com/Mattddixo/dsp/config"
+	"github.com/Mattddixo/dsp/internal/repo"
 	"github.com/urfave/cli/v2"
 )
 

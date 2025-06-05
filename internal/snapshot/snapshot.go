@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/T-I-M/dsp/config"
-	"github.com/T-I-M/dsp/pkg/utils"
+	"github.com/Mattddixo/dsp/config"
+	"github.com/Mattddixo/dsp/pkg/utils"
 )
 
 // Snapshot represents a snapshot of tracked files

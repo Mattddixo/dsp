@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/T-I-M/dsp/config"
-	"github.com/T-I-M/dsp/internal/snapshot"
+	"github.com/Mattddixo/dsp/config"
+	"github.com/Mattddixo/dsp/internal/snapshot"
 )
 
 // Bundle represents a bundle of changes

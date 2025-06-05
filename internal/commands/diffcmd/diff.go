@@ -6,10 +6,10 @@ import (
 	"os/user"
 	"path/filepath"
 
-	"github.com/T-I-M/dsp/internal/commands/common"
-	"github.com/T-I-M/dsp/internal/commands/flags"
-	"github.com/T-I-M/dsp/internal/repo"
-	"github.com/T-I-M/dsp/internal/snapshot"
+	"github.com/Mattddixo/dsp/internal/commands/common"
+	"github.com/Mattddixo/dsp/internal/commands/flags"
+	"github.com/Mattddixo/dsp/internal/repo"
+	"github.com/Mattddixo/dsp/internal/snapshot"
 	"github.com/urfave/cli/v2"
 )
 
