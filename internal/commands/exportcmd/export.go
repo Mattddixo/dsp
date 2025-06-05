@@ -120,10 +120,10 @@ Examples:
 			Usage: "Port to use (default: from config)",
 		},
 		&cli.IntFlag{
-			Name:    "number",
-			Aliases: []string{"n"},
-			Usage:   "Number of allowed downloads before shutdown (default: unlimited)",
-			Value:   -1,
+			Name:     "number",
+			Aliases:  []string{"n"},
+			Usage:    "Number of allowed downloads (required)",
+			Required: true,
 		},
 		&cli.DurationFlag{
 			Name:    "timeout",
