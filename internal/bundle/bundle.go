@@ -270,8 +270,8 @@ func (b *Bundle) Save(path string) error {
 	// Create a zip archive containing metadata and file contents
 	zipPath := path + ".zip"
 	if err := utils.CreateZipArchive(zipPath, map[string]string{
-		"metadata.json": "", // Will be filled with bundle metadata
-		"contents/":     tempDir,
+		"metadata.json": "",            // Empty initially
+		"contents":      tempDir + "/", // Add trailing slash to indicate directory
 	}); err != nil {
 		return fmt.Errorf("failed to create bundle archive: %w", err)
 	}

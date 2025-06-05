@@ -76,10 +76,7 @@ func CreateZipArchive(zipPath string, files map[string]string) error {
 
 		// Add directory
 		if path[len(path)-1] == '/' {
-			_, err := zipWriter.Create(name)
-			if err != nil {
-				return fmt.Errorf("failed to create directory entry: %w", err)
-			}
+			// Skip directory entry - files will create their parent directories automatically
 			continue
 		}
 
@@ -89,6 +86,13 @@ func CreateZipArchive(zipPath string, files map[string]string) error {
 			return fmt.Errorf("failed to open file: %w", err)
 		}
 		defer file.Close()
+
+		// Create parent directories in zip if needed
+		if dir := filepath.Dir(name); dir != "." {
+			if _, err := zipWriter.Create(dir + "/"); err != nil {
+				return fmt.Errorf("failed to create directory entry: %w", err)
+			}
+		}
 
 		writer, err := zipWriter.Create(name)
 		if err != nil {
