@@ -16,6 +16,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -29,10 +30,26 @@ func NewKeyManager() (*KeyManager, error) {
 		return nil, fmt.Errorf("failed to get home directory: %w", err)
 	}
 
-	// Set up global directory
+	// Set up global directory and all required subdirectories
 	keyDir := filepath.Join(homeDir, ".dsp-global")
-	if err := os.MkdirAll(keyDir, 0700); err != nil {
-		return nil, fmt.Errorf("failed to create key directory: %w", err)
+	requiredDirs := []string{
+		keyDir,                                                // Base directory
+		filepath.Join(keyDir, "keys"),                         // Keys directory
+		filepath.Join(keyDir, "keys", "private"),              // Private keys directory
+		filepath.Join(keyDir, "keys", "public"),               // Public keys directory
+		filepath.Join(keyDir, "keys", "public", "recipients"), // Recipients directory
+	}
+
+	// Create all required directories with appropriate permissions
+	for _, dir := range requiredDirs {
+		// Use 0700 for private directories, 0755 for public ones
+		perm := os.FileMode(0700)
+		if strings.Contains(dir, "public") {
+			perm = 0755
+		}
+		if err := os.MkdirAll(dir, perm); err != nil {
+			return nil, fmt.Errorf("failed to create directory %s: %w", dir, err)
+		}
 	}
 
 	// Create key manager
