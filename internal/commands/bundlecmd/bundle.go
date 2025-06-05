@@ -96,8 +96,11 @@ Examples:
 				return fmt.Errorf("failed to create bundles directory: %w", err)
 			}
 
-			// Use timestamp-based filename
-			outputPath = filepath.Join(bundlesDir, fmt.Sprintf("%s.json", bundle.ID))
+			// Use timestamp-based filename with .zip extension
+			outputPath = filepath.Join(bundlesDir, fmt.Sprintf("%s.zip", bundle.ID))
+		} else if filepath.Ext(outputPath) != ".zip" {
+			// Ensure output path has .zip extension
+			outputPath = outputPath[:len(outputPath)-len(filepath.Ext(outputPath))] + ".zip"
 		}
 
 		// Save bundle

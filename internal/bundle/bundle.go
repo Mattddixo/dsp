@@ -252,6 +252,11 @@ func (b *Bundle) Save(path string) error {
 		return fmt.Errorf("failed to create bundle directory: %w", err)
 	}
 
+	// Ensure path has .zip extension
+	if filepath.Ext(path) != ".zip" {
+		path = path[:len(path)-len(filepath.Ext(path))] + ".zip"
+	}
+
 	// Create a temporary directory for file contents
 	tempDir, err := os.MkdirTemp("", "dsp-bundle-*")
 	if err != nil {
@@ -259,19 +264,24 @@ func (b *Bundle) Save(path string) error {
 	}
 	defer os.RemoveAll(tempDir)
 
+	// Create contents directory
+	contentsDir := filepath.Join(tempDir, "contents")
+	if err := os.MkdirAll(contentsDir, 0755); err != nil {
+		return fmt.Errorf("failed to create contents directory: %w", err)
+	}
+
 	// Save file contents
 	for _, content := range b.FileContents {
-		contentPath := filepath.Join(tempDir, utils.HashBytes(content))
+		contentPath := filepath.Join(contentsDir, utils.HashBytes(content))
 		if err := os.WriteFile(contentPath, content, 0644); err != nil {
 			return fmt.Errorf("failed to write file content: %w", err)
 		}
 	}
 
 	// Create a zip archive containing metadata and file contents
-	zipPath := path + ".zip"
-	if err := utils.CreateZipArchive(zipPath, map[string]string{
-		"metadata.json": "",            // Empty initially
-		"contents":      tempDir + "/", // Add trailing slash to indicate directory
+	if err := utils.CreateZipArchive(path, map[string]string{
+		"metadata.json": "",                // Empty initially
+		"contents":      contentsDir + "/", // Add trailing slash to indicate directory
 	}); err != nil {
 		return fmt.Errorf("failed to create bundle archive: %w", err)
 	}
@@ -283,13 +293,8 @@ func (b *Bundle) Save(path string) error {
 	}
 
 	// Update the metadata in the zip file
-	if err := utils.UpdateZipFile(zipPath, "metadata.json", metadata); err != nil {
+	if err := utils.UpdateZipFile(path, "metadata.json", metadata); err != nil {
 		return fmt.Errorf("failed to update bundle metadata: %w", err)
-	}
-
-	// Rename zip to final bundle file
-	if err := os.Rename(zipPath, path); err != nil {
-		return fmt.Errorf("failed to rename bundle file: %w", err)
 	}
 
 	return nil
