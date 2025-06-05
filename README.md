@@ -35,27 +35,46 @@ A secure protocol for synchronizing data across disconnected or intermittently c
 
 ### Installation
 
+#### Quick Install
+```bash
+# Install the latest version
+go install github.com/Mattddixo/dsp/cmd/dsp@latest
+
+# Make sure your Go bin directory is in your PATH
+# For Linux/macOS:
+export PATH=$PATH:$(go env GOPATH)/bin
+
+# For Windows (Git Bash):
+export PATH=$PATH:/c/Users/$USER/go/bin
+```
+
+#### From Source
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/dsp.git
+   git clone https://github.com/Mattddixo/dsp.git
    cd dsp
    ```
 
-2. Copy the example environment file and configure:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-3. Install dependencies:
+2. Install dependencies:
    ```bash
    go mod tidy
    ```
 
-4. Build the project:
+3. Build and install:
    ```bash
-   go build ./cmd/dsp
+   go install ./cmd/dsp
    ```
+
+4. Make sure your Go bin directory is in your PATH (see Quick Install above)
+
+### Verifying Installation
+```bash
+# Check if dsp is installed
+which dsp
+
+# Test the command
+dsp --version
+```
 
 ## Usage
 
