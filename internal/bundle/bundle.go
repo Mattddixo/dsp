@@ -9,6 +9,7 @@ import (
 
 	"github.com/Mattddixo/dsp/config"
 	"github.com/Mattddixo/dsp/internal/snapshot"
+	"github.com/Mattddixo/dsp/pkg/utils"
 )
 
 // Bundle represents a bundle of changes
@@ -18,9 +19,10 @@ type Bundle struct {
 	CreatedAt   time.Time `json:"created_at"`
 	CreatedBy   string    `json:"created_by"`
 	Description string    `json:"description"`
+	IsInitial   bool      `json:"is_initial"` // New field for initial bundles
 
 	// Source and target snapshots
-	SourceSnapshot string `json:"source_snapshot"`
+	SourceSnapshot string `json:"source_snapshot,omitempty"` // Optional for initial bundles
 	TargetSnapshot string `json:"target_snapshot"`
 
 	// Repository information
@@ -42,6 +44,9 @@ type Bundle struct {
 
 	// Changes in this bundle
 	Changes []Change `json:"changes"`
+
+	// File contents for new and modified files
+	FileContents map[string][]byte `json:"-"` // Not serialized to JSON
 }
 
 // Change represents a single change in the bundle
@@ -53,6 +58,7 @@ type Change struct {
 	ModifiedTime  time.Time `json:"modified_time"`
 	IsSymlink     bool      `json:"is_symlink"`
 	SymlinkTarget string    `json:"symlink_target,omitempty"`
+	ContentHash   string    `json:"content_hash,omitempty"` // Hash of the file content in the bundle
 }
 
 // New creates a new bundle from the given snapshots
@@ -60,19 +66,17 @@ func New(sourceSnapshot, targetSnapshot string) (*Bundle, error) {
 	// Generate bundle ID (timestamp-based)
 	bundleID := time.Now().Format("20060102150405")
 
-	// Load snapshots
-	source, err := snapshot.Load(sourceSnapshot)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load source snapshot: %w", err)
-	}
+	// Check if this is an initial bundle
+	isInitial := sourceSnapshot == ""
 
+	// Load target snapshot
 	target, err := snapshot.Load(targetSnapshot)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load target snapshot: %w", err)
 	}
 
 	// Get repository information
-	repoPath := filepath.Dir(filepath.Dir(sourceSnapshot)) // Go up two levels from snapshot to repo root
+	repoPath := filepath.Dir(filepath.Dir(targetSnapshot)) // Go up two levels from snapshot to repo root
 	cfg, err := config.NewWithRepo(repoPath, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to load repository config: %w", err)
@@ -83,8 +87,14 @@ func New(sourceSnapshot, targetSnapshot string) (*Bundle, error) {
 		ID:             bundleID,
 		CreatedAt:      time.Now(),
 		CreatedBy:      os.Getenv("USERNAME"),
-		SourceSnapshot: filepath.Base(sourceSnapshot),
+		IsInitial:      isInitial,
 		TargetSnapshot: filepath.Base(targetSnapshot),
+		FileContents:   make(map[string][]byte),
+	}
+
+	// Set source snapshot if not initial
+	if !isInitial {
+		bundle.SourceSnapshot = filepath.Base(sourceSnapshot)
 	}
 
 	// Set repository information
@@ -101,16 +111,64 @@ func New(sourceSnapshot, targetSnapshot string) (*Bundle, error) {
 	}
 	bundle.Repository.TrackingConfig = trackingConfig
 
+	// For initial bundle, treat all files as additions
+	if isInitial {
+		for _, f := range target.Files {
+			// Read and compress file content
+			content, err := readAndCompressFile(f.Path, cfg.CompressionLevel)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file %s: %w", f.Path, err)
+			}
+
+			// Add to bundle
+			bundle.Changes = append(bundle.Changes, Change{
+				Path:          f.Path,
+				Type:          "add",
+				Hash:          f.Hash,
+				Size:          f.Size,
+				ModifiedTime:  f.ModifiedTime,
+				IsSymlink:     f.IsSymlink,
+				SymlinkTarget: f.SymlinkTarget,
+				ContentHash:   utils.HashBytes(content),
+			})
+			bundle.FileContents[f.Path] = content
+		}
+		return bundle, nil
+	}
+
+	// Load source snapshot for comparison
+	source, err := snapshot.Load(sourceSnapshot)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load source snapshot: %w", err)
+	}
+
 	// Compute changes between snapshots
-	if err := bundle.computeChanges(source, target); err != nil {
+	if err := bundle.computeChanges(source, target, cfg.CompressionLevel); err != nil {
 		return nil, fmt.Errorf("failed to compute changes: %w", err)
 	}
 
 	return bundle, nil
 }
 
+// readAndCompressFile reads and compresses a file
+func readAndCompressFile(path string, compressionLevel int) ([]byte, error) {
+	// Read file
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+
+	// Compress content
+	compressed, err := utils.Compress(content, compressionLevel)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compress file: %w", err)
+	}
+
+	return compressed, nil
+}
+
 // computeChanges computes the changes between two snapshots
-func (b *Bundle) computeChanges(source, target *snapshot.Snapshot) error {
+func (b *Bundle) computeChanges(source, target *snapshot.Snapshot, compressionLevel int) error {
 	// Create maps for quick lookup
 	sourceFiles := make(map[string]snapshot.File)
 	targetFiles := make(map[string]snapshot.File)
@@ -127,7 +185,12 @@ func (b *Bundle) computeChanges(source, target *snapshot.Snapshot) error {
 		// Check if file exists in source
 		sourceFile, exists := sourceFiles[f.Path]
 		if !exists {
-			// File was added
+			// File was added, read and compress content
+			content, err := readAndCompressFile(f.Path, compressionLevel)
+			if err != nil {
+				return fmt.Errorf("failed to read new file %s: %w", f.Path, err)
+			}
+
 			b.Changes = append(b.Changes, Change{
 				Path:          f.Path,
 				Type:          "add",
@@ -136,12 +199,20 @@ func (b *Bundle) computeChanges(source, target *snapshot.Snapshot) error {
 				ModifiedTime:  f.ModifiedTime,
 				IsSymlink:     f.IsSymlink,
 				SymlinkTarget: f.SymlinkTarget,
+				ContentHash:   utils.HashBytes(content),
 			})
+			b.FileContents[f.Path] = content
 			continue
 		}
 
 		// File exists in both, check if modified
 		if sourceFile.Hash != f.Hash {
+			// File was modified, read and compress new content
+			content, err := readAndCompressFile(f.Path, compressionLevel)
+			if err != nil {
+				return fmt.Errorf("failed to read modified file %s: %w", f.Path, err)
+			}
+
 			b.Changes = append(b.Changes, Change{
 				Path:          f.Path,
 				Type:          "modify",
@@ -150,7 +221,9 @@ func (b *Bundle) computeChanges(source, target *snapshot.Snapshot) error {
 				ModifiedTime:  f.ModifiedTime,
 				IsSymlink:     f.IsSymlink,
 				SymlinkTarget: f.SymlinkTarget,
+				ContentHash:   utils.HashBytes(content),
 			})
+			b.FileContents[f.Path] = content
 		}
 	}
 
@@ -179,15 +252,44 @@ func (b *Bundle) Save(path string) error {
 		return fmt.Errorf("failed to create bundle directory: %w", err)
 	}
 
+	// Create a temporary directory for file contents
+	tempDir, err := os.MkdirTemp("", "dsp-bundle-*")
+	if err != nil {
+		return fmt.Errorf("failed to create temp directory: %w", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Save file contents
+	for _, content := range b.FileContents {
+		contentPath := filepath.Join(tempDir, utils.HashBytes(content))
+		if err := os.WriteFile(contentPath, content, 0644); err != nil {
+			return fmt.Errorf("failed to write file content: %w", err)
+		}
+	}
+
+	// Create a zip archive containing metadata and file contents
+	zipPath := path + ".zip"
+	if err := utils.CreateZipArchive(zipPath, map[string]string{
+		"metadata.json": "", // Will be filled with bundle metadata
+		"contents/":     tempDir,
+	}); err != nil {
+		return fmt.Errorf("failed to create bundle archive: %w", err)
+	}
+
 	// Marshal the bundle metadata
 	metadata, err := json.MarshalIndent(b, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal bundle metadata: %w", err)
 	}
 
-	// Write the metadata file
-	if err := os.WriteFile(path, metadata, 0644); err != nil {
-		return fmt.Errorf("failed to write bundle file: %w", err)
+	// Update the metadata in the zip file
+	if err := utils.UpdateZipFile(zipPath, "metadata.json", metadata); err != nil {
+		return fmt.Errorf("failed to update bundle metadata: %w", err)
+	}
+
+	// Rename zip to final bundle file
+	if err := os.Rename(zipPath, path); err != nil {
+		return fmt.Errorf("failed to rename bundle file: %w", err)
 	}
 
 	return nil
@@ -195,31 +297,59 @@ func (b *Bundle) Save(path string) error {
 
 // Load loads a bundle from a file
 func Load(path string) (*Bundle, error) {
-	data, err := os.ReadFile(path)
+	// Create a temporary directory for extraction
+	tempDir, err := os.MkdirTemp("", "dsp-bundle-*")
 	if err != nil {
-		return nil, fmt.Errorf("failed to read bundle file: %w", err)
+		return nil, fmt.Errorf("failed to create temp directory: %w", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Extract the bundle archive
+	if err := utils.ExtractZipArchive(path, tempDir); err != nil {
+		return nil, fmt.Errorf("failed to extract bundle: %w", err)
+	}
+
+	// Read and parse metadata
+	metadataPath := filepath.Join(tempDir, "metadata.json")
+	metadata, err := os.ReadFile(metadataPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read bundle metadata: %w", err)
 	}
 
 	var bundle Bundle
-	if err := json.Unmarshal(data, &bundle); err != nil {
+	if err := json.Unmarshal(metadata, &bundle); err != nil {
 		return nil, fmt.Errorf("failed to parse bundle: %w", err)
 	}
 
+	// Load file contents
+	bundle.FileContents = make(map[string][]byte)
+	contentsDir := filepath.Join(tempDir, "contents")
+	entries, err := os.ReadDir(contentsDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read contents directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		contentPath := filepath.Join(contentsDir, entry.Name())
+		content, err := os.ReadFile(contentPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read file content: %w", err)
+		}
+		// Find the change that uses this content
+		for _, change := range bundle.Changes {
+			if change.ContentHash == entry.Name() {
+				bundle.FileContents[change.Path] = content
+				break
+			}
+		}
+	}
+
 	// Validate bundle
-	if bundle.ID == "" {
-		return nil, fmt.Errorf("bundle has no ID")
-	}
-	if bundle.Repository.DSPDir == "" {
-		return nil, fmt.Errorf("bundle has no DSP directory")
-	}
-	if bundle.Repository.DataDir == "" {
-		return nil, fmt.Errorf("bundle has no data directory")
-	}
-	if bundle.SourceSnapshot == "" {
-		return nil, fmt.Errorf("bundle has no source snapshot")
-	}
-	if len(bundle.Changes) == 0 {
-		return nil, fmt.Errorf("bundle has no changes")
+	if err := bundle.Verify(); err != nil {
+		return nil, fmt.Errorf("bundle verification failed: %w", err)
 	}
 
 	return &bundle, nil

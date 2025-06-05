@@ -16,13 +16,17 @@ var Command = &cli.Command{
 	Usage: "Create a bundle of changes between snapshots",
 	Description: `Create a bundle of changes between two snapshots.
 The bundle contains the changes between the source and target snapshots.
+If only one snapshot exists, an initial bundle will be created.
 
 Examples:
   # Create a bundle between the latest and previous snapshots
   dsp bundle
 
   # Create a bundle between specific snapshots
-  dsp bundle -s 20240101-120000 -t 20240102-150000`,
+  dsp bundle -s 20240101-120000 -t 20240102-150000
+
+  # Create an initial bundle (automatic when only one snapshot exists)
+  dsp bundle`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "source",
@@ -148,43 +152,61 @@ func getSnapshots(dspDir, sourceID, targetID string) (string, string, error) {
 		}
 	}
 
-	// Get source snapshot
-	var sourceSnapshot string
+	// If source ID is specified, use it
 	if sourceID != "" {
-		sourceSnapshot = filepath.Join(snapshotsDir, sourceID, "snapshot.json")
+		sourceSnapshot := filepath.Join(snapshotsDir, sourceID, "snapshot.json")
 		if _, err := os.Stat(sourceSnapshot); err != nil {
 			return "", "", fmt.Errorf("source snapshot not found: %w", err)
 		}
-	} else {
-		// Find previous snapshot
-		entries, err := os.ReadDir(snapshotsDir)
-		if err != nil {
-			return "", "", fmt.Errorf("failed to read snapshots directory: %w", err)
-		}
+		return sourceSnapshot, targetSnapshot, nil
+	}
 
-		var prevTime int64
-		targetTimeStr := filepath.Base(filepath.Dir(targetSnapshot))
-		targetTime, err := strconv.ParseInt(targetTimeStr, 10, 64)
-		if err != nil {
-			return "", "", fmt.Errorf("invalid target snapshot timestamp: %w", err)
-		}
+	// Count snapshots to determine if this is an initial bundle
+	entries, err := os.ReadDir(snapshotsDir)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to read snapshots directory: %w", err)
+	}
 
-		for _, entry := range entries {
-			if !entry.IsDir() {
-				continue
+	snapshotCount := 0
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		snapshotPath := filepath.Join(snapshotsDir, entry.Name(), "snapshot.json")
+		if _, err := os.Stat(snapshotPath); err == nil {
+			snapshotCount++
+		}
+	}
+
+	// If only one snapshot exists, treat as initial bundle
+	if snapshotCount == 1 {
+		return "", targetSnapshot, nil
+	}
+
+	// Find previous snapshot
+	var prevTime int64
+	targetTimeStr := filepath.Base(filepath.Dir(targetSnapshot))
+	targetTime, err := strconv.ParseInt(targetTimeStr, 10, 64)
+	if err != nil {
+		return "", "", fmt.Errorf("invalid target snapshot timestamp: %w", err)
+	}
+
+	var sourceSnapshot string
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		snapshotPath := filepath.Join(snapshotsDir, entry.Name(), "snapshot.json")
+		if info, err := os.Stat(snapshotPath); err == nil {
+			if t := info.ModTime().UnixNano(); t < targetTime && t > prevTime {
+				prevTime = t
+				sourceSnapshot = snapshotPath
 			}
-			snapshotPath := filepath.Join(snapshotsDir, entry.Name(), "snapshot.json")
-			if info, err := os.Stat(snapshotPath); err == nil {
-				if t := info.ModTime().UnixNano(); t < targetTime && t > prevTime {
-					prevTime = t
-					sourceSnapshot = snapshotPath
-				}
-			}
 		}
+	}
 
-		if sourceSnapshot == "" {
-			return "", "", fmt.Errorf("no previous snapshot found")
-		}
+	if sourceSnapshot == "" {
+		return "", "", fmt.Errorf("no previous snapshot found")
 	}
 
 	return sourceSnapshot, targetSnapshot, nil

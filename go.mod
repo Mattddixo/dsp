@@ -1,9 +1,12 @@
 module github.com/Mattddixo/dsp
 
-go 1.21
+go 1.22
+
+toolchain go1.24.3
 
 require (
 	filippo.io/age v1.1.1
+	github.com/klauspost/compress v1.18.0
 	github.com/urfave/cli/v2 v2.27.1
 	github.com/zeebo/blake3 v0.2.4
 	gopkg.in/yaml.v3 v3.0.1
