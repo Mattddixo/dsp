@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
+	"time"
 
 	"github.com/Mattddixo/dsp/internal/bundle"
 	"github.com/Mattddixo/dsp/internal/repo"
@@ -186,10 +186,11 @@ func getSnapshots(dspDir, sourceID, targetID string) (string, string, error) {
 	// Find previous snapshot
 	var prevTime int64
 	targetTimeStr := filepath.Base(filepath.Dir(targetSnapshot))
-	targetTime, err := strconv.ParseInt(targetTimeStr, 10, 64)
+	targetTime, err := time.Parse("20060102-150405", targetTimeStr)
 	if err != nil {
 		return "", "", fmt.Errorf("invalid target snapshot timestamp: %w", err)
 	}
+	targetTimeUnix := targetTime.UnixNano()
 
 	var sourceSnapshot string
 	for _, entry := range entries {
@@ -198,7 +199,7 @@ func getSnapshots(dspDir, sourceID, targetID string) (string, string, error) {
 		}
 		snapshotPath := filepath.Join(snapshotsDir, entry.Name(), "snapshot.json")
 		if info, err := os.Stat(snapshotPath); err == nil {
-			if t := info.ModTime().UnixNano(); t < targetTime && t > prevTime {
+			if t := info.ModTime().UnixNano(); t < targetTimeUnix && t > prevTime {
 				prevTime = t
 				sourceSnapshot = snapshotPath
 			}
