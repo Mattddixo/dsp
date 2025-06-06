@@ -250,7 +250,7 @@ func (m *KeyManager) GenerateSigningKeyPair() error {
 	}
 
 	// Create directories if they don't exist
-	if err := os.MkdirAll(filepath.Dir(m.GetPrivateKeyPath()), 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(m.GetSigningKeyPath()), 0700); err != nil {
 		return fmt.Errorf("failed to create key directory: %w", err)
 	}
 
@@ -267,7 +267,7 @@ func (m *KeyManager) GenerateSigningKeyPair() error {
 	}
 
 	// Write private key
-	privateKeyPath := m.GetPrivateKeyPath()
+	privateKeyPath := m.GetSigningKeyPath()
 	privateKeyFile, err := os.OpenFile(privateKeyPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to create private key file: %w", err)
@@ -296,7 +296,7 @@ func (m *KeyManager) GenerateSigningKeyPair() error {
 	}
 
 	// Write public key
-	publicKeyPath := m.GetPublicKeyPath()
+	publicKeyPath := m.GetSigningPublicKeyPath()
 	publicKeyFile, err := os.OpenFile(publicKeyPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {
 		os.Remove(privateKeyPath) // Clean up on error
