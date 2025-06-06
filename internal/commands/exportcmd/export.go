@@ -698,7 +698,18 @@ func (s *ExportServer) generateTokens(count int) error {
 		}
 
 		tokenStr := base64.URLEncoding.EncodeToString(token)
+
+		// Add to token pool
 		s.auth.TokenPool = append(s.auth.TokenPool, tokenStr)
+
+		// Initialize token info in the map
+		s.auth.Tokens[tokenStr] = &TokenInfo{
+			Token:      tokenStr,
+			Expiry:     time.Now().Add(5 * time.Minute),
+			Used:       false,
+			ClientIP:   "",          // Will be set when assigned
+			AssignedAt: time.Time{}, // Will be set when assigned
+		}
 	}
 
 	return nil
