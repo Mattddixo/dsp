@@ -73,15 +73,25 @@ func NewKeyManager() (*KeyManager, error) {
 
 // InitializeKeys generates new age keys and a local certificate
 func (m *KeyManager) InitializeKeys() error {
-	// Generate age keys
-	if err := m.GenerateKeyPair(); err != nil {
-		return fmt.Errorf("failed to generate key pair: %w", err)
+	// Generate age key pair if it doesn't exist
+	if _, err := os.Stat(m.GetPrivateKeyPath()); os.IsNotExist(err) {
+		if err := m.GenerateKeyPair(); err != nil {
+			return fmt.Errorf("failed to generate key pair: %w", err)
+		}
 	}
 
-	// Generate local certificate if it doesn't exist
+	// Generate signing key pair if it doesn't exist
+	signingKeyPath := filepath.Join(filepath.Dir(m.GetPrivateKeyPath()), "signing.key")
+	if _, err := os.Stat(signingKeyPath); os.IsNotExist(err) {
+		if err := m.GenerateSigningKeyPair(); err != nil {
+			return fmt.Errorf("failed to generate signing key pair: %w", err)
+		}
+	}
+
+	// Generate certificate if it doesn't exist
 	if _, err := os.Stat(m.certPath); os.IsNotExist(err) {
 		if err := m.generateLocalCertificate(); err != nil {
-			return fmt.Errorf("failed to generate local certificate: %w", err)
+			return fmt.Errorf("failed to generate certificate: %w", err)
 		}
 	}
 
@@ -343,7 +353,17 @@ func (m *KeyManager) GetPrivateKeyPath() string {
 	return filepath.Join(m.keyDir, "keys", "private", "age.key")
 }
 
+// GetSigningKeyPath returns the path to the signing private key
+func (m *KeyManager) GetSigningKeyPath() string {
+	return filepath.Join(filepath.Dir(m.GetPrivateKeyPath()), "signing.key")
+}
+
 // GetPublicKeyPath returns the path to the public key
 func (m *KeyManager) GetPublicKeyPath() string {
 	return filepath.Join(m.keyDir, "keys", "private", "age.key.pub")
+}
+
+// GetSigningPublicKeyPath returns the path to the signing public key
+func (m *KeyManager) GetSigningPublicKeyPath() string {
+	return filepath.Join(m.keyDir, "keys", "private", "signing.pub")
 }

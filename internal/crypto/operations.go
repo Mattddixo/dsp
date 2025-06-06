@@ -317,11 +317,11 @@ func (m *KeyManager) GenerateSigningKeyPair() error {
 
 // SignExportInfo signs the export information using the private key
 func (m *KeyManager) SignExportInfo(info interface{}) (string, error) {
-	// Read private key
-	privateKeyPath := m.GetPrivateKeyPath()
+	// Read signing private key
+	privateKeyPath := m.GetSigningKeyPath()
 	privateKeyData, err := os.ReadFile(privateKeyPath)
 	if err != nil {
-		return "", fmt.Errorf("failed to read private key: %w", err)
+		return "", fmt.Errorf("failed to read signing key: %w", err)
 	}
 
 	// Parse PEM block
@@ -333,13 +333,13 @@ func (m *KeyManager) SignExportInfo(info interface{}) (string, error) {
 	// Parse private key
 	privateKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse private key: %w", err)
+		return "", fmt.Errorf("failed to parse signing key: %w", err)
 	}
 
 	// Convert to ed25519.PrivateKey
 	ed25519Key, ok := privateKey.(ed25519.PrivateKey)
 	if !ok {
-		return "", fmt.Errorf("private key is not an ed25519 key")
+		return "", fmt.Errorf("signing key is not an ed25519 key")
 	}
 
 	// Marshal the info to JSON
@@ -357,14 +357,15 @@ func (m *KeyManager) SignExportInfo(info interface{}) (string, error) {
 
 // VerifyExportInfo verifies the signature of export information
 func (m *KeyManager) VerifyExportInfo(info interface{}, signature string) error {
-	// Get the public key
-	publicKey, err := m.GetPublicKey()
+	// Get the signing public key
+	publicKeyPath := m.GetSigningPublicKeyPath()
+	publicKeyData, err := os.ReadFile(publicKeyPath)
 	if err != nil {
-		return fmt.Errorf("failed to get public key: %w", err)
+		return fmt.Errorf("failed to read signing public key: %w", err)
 	}
 
 	// Parse PEM block
-	block, _ := pem.Decode([]byte(publicKey))
+	block, _ := pem.Decode(publicKeyData)
 	if block == nil {
 		return fmt.Errorf("failed to decode PEM block")
 	}
@@ -372,13 +373,13 @@ func (m *KeyManager) VerifyExportInfo(info interface{}, signature string) error 
 	// Parse public key
 	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		return fmt.Errorf("failed to parse public key: %w", err)
+		return fmt.Errorf("failed to parse signing public key: %w", err)
 	}
 
 	// Convert to ed25519.PublicKey
 	ed25519Key, ok := pub.(ed25519.PublicKey)
 	if !ok {
-		return fmt.Errorf("public key is not an ed25519 key")
+		return fmt.Errorf("signing public key is not an ed25519 key")
 	}
 
 	// Marshal the info to JSON
